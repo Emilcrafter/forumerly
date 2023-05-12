@@ -1,0 +1,7 @@
+<link rel="stylesheet" href="/css/bootstrap.min.css">
+<link rel="stylesheet" href="/css/master.css">
+<script defer src="//ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script defer src="/javascript/bootstrap.min.js"></script>
+<script defer src="/javascript/main.js"></script>
+<script defer src="//use.fontawesome.com/fa0d33d6bd.js"></script>
+<link rel="shortcut icon" href="/images/forumerly.ico">

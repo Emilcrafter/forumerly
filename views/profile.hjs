@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>{{profile.username}}</title>
+    {{>head}}
+  </head>
+  <body>
+    {{>navbar}}
+      <div class="container">
+        {{#success}}
+          <div class="alert alert-success" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{.}}</div>
+        {{/success}}
+        {{#error}}
+          <div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{.}}</div>
+        {{/error}}
+        {{#viewerIsOwner}}
+        <a class="btn btn-default pull-right" href="/settings" role="button">Edit profile</a>
+        {{/viewerIsOwner}}
+        <div class="col-sm-4 col-xs-12">
+          <div class="col-sm-12 col-xs-6">
+            <img class="profilePicture" style="width: 80%" src="{{profile.img}}">
+          </div>
+          <div class="col-sm-10 col-xs-6">
+            {{#profile.admin}}
+              <h2><span style="color: #e84d30" title="Admin" data-toggle="tooltip" data-placement="right">{{profile.username}}</span></h2>
+            {{/profile.admin}}
+            {{^profile.admin}}
+              <h2>{{profile.username}}</h2>
+            {{/profile.admin}}
+            {{#profile.bio}}
+              <p class="text-muted">{{profile.bio}}</p>
+            {{/profile.bio}}
+            {{^profile.bio}}
+              <p class="text-muted">Apparently this user likes to keep an air of mystery about themself.</p>
+            {{/profile.bio}}
+            <hr>
+            <ul style="list-style: none; padding-left: 0;">
+              <li><b>Join date: </b>{{profile.joinDate}}</li>
+              <li><b>Post count: </b>{{profile.postCount}}</li>
+            </ul>
+            <hr>
+            {{#profile.admin}}
+            {{#viewerIsOwner}}
+              <form action="/upload/users" method="post" enctype="multipart/form-data">
+                <div class="upload">
+                  <input id="fileUpload" type="file" name="upload-users" />
+                  <input type="button" class="btn" value="Browse" />
+                  <span id="fileNameUpload" class="fileName">Select file..</span>
+                </div>
+                <br>
+                <br>
+                <button type="submit" class="btn btn-primary">Upload users</button>
+              </form>
+              <hr>
+              <a class="btn btn-primary" href="/download/users" role="button">Download all users</a>
+            {{/viewerIsOwner}}
+            {{/profile.admin}}
+          </div>
+        </div>
+        <div class="col-sm-8">
+          <ul class="nav nav-tabs">
+            {{^repliesTab}}
+              <!-- Threads tab -->
+              <li role="presentation" class="active"><a href="?tab=threads">Threads</a></li>
+              <li role="presentation"><a href="?tab=replies">Replies</a></li>
+            </ul>
+              <div>
+                <div style="margin-top: 20px" class="list-group">
+                  <table style="table-layout: fixed" class="table table-striped">
+                    <tr style="background-color: #158cba; color: #fff">
+                      <th style="width: 30%">Subject</th>
+                      <th style="width: 7%; text-align: center">Replies</th>
+                      <th style="width: 21%; text-align: center">Posted</th>
+                      <th style="width: 22%; text-align: center">Last Post By</th>
+                      <th style="width: 20%; text-align: center">Last Post</th>
+                    </tr>
+                    {{#profile.threads}}
+                      <tr class="thread">
+                        <td><a class="no-link" href="/thread/{{ _id }}"><div class="text" style="height:100%;width:100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{ subject }}</div></a></td>
+                        <td style="text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">{{ numReplies }}</td>
+                        <td style="text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis" title="{{ formatedPostDate }}" data-toggle="tooltip" data-placement="top">{{ relativePostDate }}</td>
+                        <td style="text-align: center"><a class="no-link" href="/user/{{ lastPostBy }}"><div class="text" style="height:100%;width:100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis">
+                          {{#lastPosterIsAdmin}}
+                            <span style="color: #e84d30" title="Admin" data-toggle="tooltip" data-placement="right">{{ lastPostBy }}</span>
+                          {{/lastPosterIsAdmin}}
+                          {{^lastPosterIsAdmin}}
+                            {{ lastPostBy }}
+                          {{/lastPosterIsAdmin}}
+                        </div></a></td>
+                        <td style="text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis" title="{{ formatedLastPostDate }}" data-toggle="tooltip" data-placement="top">{{ relativeLastPostDate }}</td>
+                      </tr>
+                    {{/profile.threads}}
+
+                  </table>
+                </div>
+                {{^profile.threads}}
+                  <h3 class="text-muted">This user hasn't created any threads yet.</h3>
+                {{/profile.threads}}
+              </div>
+            {{/repliesTab}}
+            {{#repliesTab}}
+              <!-- Replies tab -->
+              <li role="presentation"><a href="?tab=threads">Threads</a></li>
+              <li role="presentation" class="active"><a href="?tab=replies">Replies</a></li>
+            </ul>
+              <div>
+                {{#profile.replies}}
+                <div style="display: flex; overflow-wrap: break-word; height: 100%; width: 100%; padding-left: 0; margin-top: 10px" class="list-group-item pull-right">
+                  <div style="padding-left: 20px">
+                    <a href="/thread/{{parentThreadID}}">{{parentThreadSubject}}</a><br>
+                    <small title="{{ formatedPostDate }}" data-toggle="tooltip" data-placement="top">{{ relativePostDate }}</small>
+                    <p style="white-space: pre-wrap" class="lead">{{ message }}</p>
+                  </div>
+                </div>
+                {{/profile.replies}}
+                {{^profile.replies}}
+                  <h3 class="text-muted">This user hasn't replied to any threads yet.</h3>
+                {{/profile.replies}}
+              </div>
+            {{/repliesTab}}
+
+        </div>
+      </div>
+    {{>footer}}
+  </body>
+</html>

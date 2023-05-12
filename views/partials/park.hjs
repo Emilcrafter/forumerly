@@ -1,0 +1,33 @@
+{{#authenticated}}
+   <h3>ForuPark</h3>
+  <div>
+    <h4>We park your car !</h4>
+
+    <form action="/park" method="post">
+          <div class="form-group">
+            <input type="text" class="form-control" name="licensePlate" placeholder="XTH-...">
+          </div>
+          <div class="form-group">
+            <input type="number" class="form-control" name="mintime" placeholder="Minimum amount of minutes to park">
+          </div>
+
+           <div class="form-group">
+
+        <select class="form-control" name="location">
+            {{#locations}}
+            <option id="{{_id}}" value="{{_id}}">{{name}}</option>
+            {{/locations}}
+          </select>
+        </div>
+
+          <button type="submit" class="btn btn-default">Park !</button>
+        </form>
+
+    <h4>Your parked cars<h4>
+    {{#slots}}
+     <h5><a class="btn btn-xs btn-danger" href="/up?id={{_id}}">Unpark</a> <b>{{licensePlate}}</b> is in <b>{{location.name}} for at least {{mintime}} minutes</b> {{relativeDate }} </h5>
+    {{/slots}}
+  </div>
+{{/authenticated}}
+
+
