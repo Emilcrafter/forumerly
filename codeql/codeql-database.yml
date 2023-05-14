@@ -1,0 +1,11 @@
+---
+sourceLocationPrefix: /home/emil/forumerly
+baselineLinesOfCode: 1025
+unicodeNewlines: true
+columnKind: utf16
+primaryLanguage: javascript
+creationMetadata:
+  sha: 853aaa5de394404579b4b7b3b4af514634531f6b
+  cliVersion: 2.13.0
+  creationTime: 2023-05-12T16:07:59.600854634Z
+finalised: true
