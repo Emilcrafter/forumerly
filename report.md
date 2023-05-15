@@ -1,3 +1,4 @@
+
 # DoS vulnerabilities
     
 ```javascript
@@ -107,7 +108,68 @@ To mitigate this issue, the web app should use CSRF tokens for its forms.
 
 
 # Prototype pollution & RCE
+To find the prototype pollution bug in the code, We used GraphQL to generate a database of the code. We then used the default javascript suite included in GraphQL to search for vulnerabilities. From the list that was generated, We found the merge bug. In order to then create a working exploit, we had to figure out what sort of request we should send to the server in order to trigger the bug. To figure this out, we logged into the database with MongoDB compass and found the "admin" user in the forumerly/users database. Since the passwords were stored in plaintext, we were able to sign in using the admin credentials as listed in the table. We then found the route on the page with the form pointing to /upload/users. To send a test request, we simply uploaded a JSON file with the contents `[]`. The reason for this was that the code handling the POST request starts with a call to Array.prototype.map, meaning that the request would likely have the correct shape and headers, but the server wouldn't do anything with it.
 
+After figuring out the shape of the request, we were able to get to work with the prototype pollution. After some experimentation and fighting with the fetch api to get the correct headers and body, we were able to upload our first custom user object to be merged on the server. We then started experimenting with prototype pollution. It took some time to figure out that the object we were trying to change was `Object.prototype`. We finally got this to work by sending an object with the following structure:
+
+```javascript
+{
+    "__proto__": {
+        "constructor": {
+            "prototype": {
+                "payload": "here"
+            }
+        }
+    }
+}
+```
+
+Which makes sense because any object with no custom class will have a constructor of Object, and the constructor of Object has a prototype property that is the prototype of all objects. This was a bingo, since we could now change the prototype of all objects to whatever we wanted.
+
+Something that we did not need GraphQL to figure out was where we should aim our sights to perform RCE. A quick search through the code revealed an "eval" call in the file `passport.js`, specifically in a snippet of code that was used to create a new user on the fly in the case that an unregistered user signed in. The issue with this was that this it of code was guarded by a conditional statement. However, since we have our prototype pollution, we can simply set this property to true, and we will be able to execute arbitrary code on the server. Here is the most important part of the conditional statement:
+
+```javascript
+if (options.userAutoCreateTemplate){
+    try {
+            const wrapperFunction = `(function() {
+              const username = '${username}';
+              const passport = '${password}';
+              return \`${options.userAutoCreateTemplate}\`;
+            })()`
+            const newUser = JSON.parse(eval(wrapperFunction))
+            ...
+    } catch (e) {
+       ...
+    }
+}
+```
+The final payload we sent to the server for prototype pollution was the following:
+
+```javascript
+{
+    "__proto__": {
+        "constructor": {
+            "prototype": {
+                "userAutoCreateTemplate": true
+            }
+        }
+    }
+}
+``` 
+This would let us into the code snippet containing the `eval` call. To enter this bit of code, we had to send a POST request to `/login`. We did the same type of investigation here as with the previously mentioned endpoint, by simply logging in and viewing the shape of the request in the network tab. By setting a `username` of `blabla';console.log("Hello, world!");//`, we were able to see that the exploit was really working. At this stage however, the server crashed instantly whenever we did this due to the following error: 
+```
+MongoServerError: BSON field 'insert.userAutoCreateTemplate' is an unknown field.
+    at Connection.onMessage (/home/emil/forumerly/node_modules/mongodb/lib/cmap/connection.js:203:30)
+    ...
+    at Socket.emit (node:events:513:28)
+```
+Which seemed to be caused by the prototype pollution. In order to counteract this, we simply executed the following line of code in our RCE payload:
+```javascript
+delete Object.prototype.userAutoCreateTemplate;
+```
+We can safely do this because we are already at the place in the code where we wanted to get by using prototype pollution.
+
+The next step was to try and do something useful with this newly found access. Through some means or other, we found a reverse shell payload for Node.js. This was customised for our specific use case and sent to the server. With this, we managed to get a shell on the target machine. Below are outlined the steps in brief, to get a shell on the target machine:
 
 ## Stage 1: Prototype pollution
 In the file `user.js`, a POST route defined at `/upload/users` allows the user to upload a JSON file containing an array of users. This is likely functionality that was added for testing purposes or for administrator use. The route expects an array of user objects, where each user is either new or already exists in the database. If the user already exists, it will be merged with the existing record from the database. This is done in an unsecure way that allows for prototype pollution. This is the function that merges the user objects:
